@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# image-guess-admin
 
-## Getting Started
+Admin panel to preview collectible card game cards and manage **puzzles** in PostgreSQL (no cards table). Step preview uses **FAB zones**, **combined effects**, and deterministic generation from `seed` (see **[docs/](./docs/README.md)**).
 
-First, run the development server:
+## What it does
+
+1. **Pluggable datasources** — Currently [Flesh and Blood](https://fabtcg.com/) via `@flesh-and-blood/cards`. Each plugin defines filters (e.g. set) and exposes `loadCards()` without persisting cards.
+2. **In-memory preview** — “Load cards” fills the grid from the plugin.
+3. **Puzzles** — “Open Puzzle” calls **get-or-create** (unique `dataSource` + external card id), opens `/puzzles/[id]` with the original image, a **15**-step grid: each overlay view is **stateless** from `seed` + step (`deterministicStep.ts` → `generateRegions`). Art uses a **seeded shuffle** of 16 cells and a **fixed step script** (blur / invert / rotate / clears). See `docs/ZONES_FAB.md` + `docs/PUZZLE_SYSTEM.md`.
+
+## Requirements
+
+- Node.js 20+ (recommended)
+- PostgreSQL and `DATABASE_URL` in `.env`
+
+## Getting started
 
 ```bash
+npm install
+npx prisma generate
+npx prisma db push
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Schema: `@@unique([dataSource, externalCardId])`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+If `db push` fails with **P2002** / duplicates, the `Puzzle` table already has two rows with the same `(dataSource, externalCardId)` pair. Remove duplicates or clear puzzles in SQL, then run `db push` again.
 
-## Learn More
+### TLS (Supabase / poolers)
 
-To learn more about Next.js, take a look at the following resources:
+See `DATABASE_SSL_REJECT_UNAUTHORIZED` and `lib/prisma.ts` if you hit certificate errors in development.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## API (summary)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Method | Path | Purpose |
+|--------|------|---------|
+| POST | `/api/puzzles/get-or-create` | Get or create puzzle for a card |
+| POST | `/api/puzzles/bulk-generate` | Batches of 30: save drafts (`savedAt`), create missing puzzles (saved) |
+| POST | `/api/puzzles/regenerate` | New `seed` and steps |
+| POST | `/api/puzzles/delete` | Delete puzzle |
+| POST | `/api/puzzles/save` | Mark puzzle saved (`savedAt`) |
+| POST | `/api/puzzles/lookup` | Status for cards (`dataSource` + external ids) |
 
-## Deploy on Vercel
+## npm scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Next.js development server |
+| `npm run build` | Production build |
+| `npm run start` | Production server |
+| `npm run lint` | ESLint |
+| `npm run test` | Vitest (watch) |
+| `npm run test:run` | Vitest single run |
+| `npm run test:coverage` | Vitest + coverage (thresholds ≥ **60%** lines/statements on `lib/` + `app/api/`) |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Useful paths
+
+| Path | Role |
+|------|------|
+| `lib/datasources/` | Plugins and FAB |
+| `lib/puzzle/` | `deterministicStep`, `generateRegions`, `generateSteps`, FAB zones, effects |
+| `docs/` | Maintained documentation (see `docs/MAINTENANCE.md`) |
+| `app/api/puzzles/*` | get-or-create, regenerate, delete |
+| `app/puzzles/[id]/` | Puzzle detail page |
+
+- **[docs/README.md](./docs/README.md)** — documentation index (puzzle, zones, effects, architecture).
+- **[project_content.md](./project_content.md)** — compact context and repo tree.
+
+## Conventions
+
+- Next.js 16: see `AGENTS.md` and docs under `node_modules/next`.
+- Prisma client in `app/generated/prisma` (gitignored).
+
+## License
+
+Private — see `package.json`.

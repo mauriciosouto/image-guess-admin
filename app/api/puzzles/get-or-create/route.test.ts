@@ -1,0 +1,93 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const findFirst = vi.hoisted(() => vi.fn());
+const create = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/prisma", () => ({
+  prisma: {
+    puzzle: {
+      findFirst,
+      create,
+    },
+  },
+}));
+
+import { POST } from "./route";
+
+describe("POST /api/puzzles/get-or-create", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns 400 for invalid body", async () => {
+    const res = await POST(
+      new Request("http://t", {
+        method: "POST",
+        body: JSON.stringify({}),
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("returns existing puzzle without creating", async () => {
+    findFirst.mockResolvedValueOnce({
+      id: "existing",
+      seed: "s",
+      cardName: "N",
+      imageUrl: "u",
+      savedAt: null,
+      steps: [
+        { step: 1, blur: 1, brightness: 0.5 },
+        { step: 2, blur: 2, brightness: 0.6 },
+      ],
+    });
+
+    const res = await POST(
+      new Request("http://t", {
+        method: "POST",
+        body: JSON.stringify({
+          dataSource: "fab",
+          card: { id: "c1", name: "N", imageUrl: "u" },
+        }),
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { puzzleId: string; steps: unknown[] };
+    expect(body.puzzleId).toBe("existing");
+    expect(body.steps).toHaveLength(2);
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("creates when missing", async () => {
+    findFirst.mockResolvedValueOnce(null);
+    create.mockResolvedValueOnce({
+      id: "new-id",
+      seed: "generated-uuid",
+      cardName: "Card",
+      imageUrl: "http://i",
+      savedAt: null,
+      steps: Array.from({ length: 15 }, (_, i) => ({
+        step: i + 1,
+        blur: 1,
+        brightness: 0.5,
+      })),
+    });
+
+    const res = await POST(
+      new Request("http://t", {
+        method: "POST",
+        body: JSON.stringify({
+          dataSource: "fab",
+          card: { id: "new", name: "Card", imageUrl: "http://i" },
+        }),
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { puzzleId: string };
+    expect(body.puzzleId).toBe("new-id");
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+});
