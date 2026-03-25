@@ -13,6 +13,10 @@ Admin panel to preview collectible card game cards and manage **puzzles** in Pos
 - Node.js 20+ (recommended)
 - PostgreSQL and `DATABASE_URL` in `.env`
 
+## Deploy (público + contraseña)
+
+En producción configurá **`ADMIN_BASIC_AUTH_USER`** y **`ADMIN_BASIC_AUTH_PASSWORD`** (HTTP Basic Auth en `middleware.ts`). Guía paso a paso (Vercel, GitHub Actions, alternativas): **[docs/DEPLOY.md](./docs/DEPLOY.md)**.
+
 ## Getting started
 
 ```bash
