@@ -1,80 +1,80 @@
-# Deploy público con autenticación
+# Public deploy with authentication
 
-La app es **Next.js** y usa **PostgreSQL** (Prisma). Para tener una URL pública **restringida** (usuario/contraseña), la opción más simple incluida en el repo es **HTTP Basic Auth** vía `middleware.ts`.
+The app is **Next.js** with **PostgreSQL** (Prisma). To expose a public URL that is **restricted** (username/password), the simplest option in this repo is **HTTP Basic Auth** via `middleware.ts`.
 
-## 1. Autenticación (Basic Auth)
+## 1. Authentication (Basic Auth)
 
-En el servidor de producción definí **siempre** (y en **GitHub / Vercel / Render → Environment variables**):
+In **production**, always set (in **GitHub / Vercel / Render → Environment variables**):
 
-| Variable | Ejemplo |
+| Variable | Example |
 |----------|---------|
 | `ADMIN_BASIC_AUTH_USER` | `admin` |
-| `ADMIN_BASIC_AUTH_PASSWORD` | contraseña larga y aleatoria |
+| `ADMIN_BASIC_AUTH_PASSWORD` | long random password |
 
-También necesitás **`DATABASE_URL`** apuntando a tu Postgres (ej. Neon, Supabase, RDS).
+You also need **`DATABASE_URL`** pointing at your Postgres (e.g. Neon, Supabase, RDS).
 
 ### TLS / “self-signed certificate in certificate chain”
 
-En **Vercel** (`NODE_ENV=production`) la verificación TLS de Postgres es **estricta** por defecto. Si Prisma falla con *Error opening a TLS connection: self-signed certificate in certificate chain*, agregá **una** de estas variables en el panel del host:
+On **Vercel** (`NODE_ENV=production`), Postgres TLS verification is **strict** by default. If Prisma fails with *Error opening a TLS connection: self-signed certificate in certificate chain*, add **one** of these variables in the host dashboard:
 
-| Variable | Valor |
+| Variable | Value |
 |----------|--------|
-| **`DATABASE_RELAX_TLS`** | `true` (recomendado; nombre claro) |
-| `DATABASE_SSL_REJECT_UNAUTHORIZED` | `false` (equivalente; ya documentada en `lib/prisma.ts`) |
+| **`DATABASE_RELAX_TLS`** | `true` (recommended; clear name) |
+| `DATABASE_SSL_REJECT_UNAUTHORIZED` | `false` (equivalent; see `lib/prisma.ts`) |
 
-La conexión sigue siendo cifrada; solo se omite validar la cadena de certificados del servidor (típico con poolers tipo Supabase).
+The connection stays encrypted; only the server certificate chain validation is skipped (common with Supabase-style poolers).
 
-Comportamiento:
+Behavior:
 
-- **Producción** (`NODE_ENV=production`): si faltan user/pass, la app responde **503** (evita dejar el admin abierto por error).
-- **Desarrollo**: si no configurás esas variables, el middleware no exige login (como hoy en local).
+- **Production** (`NODE_ENV=production`): if user/password env vars are missing, the app returns **503** (avoids shipping an unprotected admin by mistake).
+- **Development**: if those variables are unset, the middleware does not require login (same as local dev today).
 
-El navegador mostrará el cuadro nativo de usuario/contraseña.
+The browser shows the native username/password prompt.
 
-### Alternativas (sin tocar código)
+### Alternatives (no code changes)
 
-- **Cloudflare Access** (o Zero Trust) delante del dominio: login con email, OTP, etc.
-- **Vercel** (plan Pro): “Password Protection” en el proyecto.
+- **Cloudflare Access** (or Zero Trust) in front of the domain: email login, OTP, etc.
+- **Vercel** (Pro plan): project “Password Protection”.
 
 ---
 
-## 2. Deploy con GitHub → Vercel (recomendado)
+## 2. Deploy with GitHub → Vercel (recommended)
 
-No hace falta un workflow de deploy si conectás el repo en Vercel: cada push a `main` despliega solo.
+You do not need a separate deploy workflow if you connect the repo in Vercel: each push to `main` deploys on its own.
 
-1. [vercel.com](https://vercel.com) → **Add New Project** → importar el repo de GitHub.
+1. [vercel.com](https://vercel.com) → **Add New Project** → import the GitHub repo.
 2. **Environment variables**: `DATABASE_URL`, `ADMIN_BASIC_AUTH_USER`, `ADMIN_BASIC_AUTH_PASSWORD`.
-3. **Build**: `npm run build` (default), **Install** `npm install` (ejecuta `postinstall` → `prisma generate`).
-4. Asegurate de que la base acepte conexiones desde internet (SSL según tu proveedor; el proyecto ya documenta TLS relajado en dev en `lib/prisma.ts`).
+3. **Build**: `npm run build` (default), **Install** `npm install` (runs `postinstall` → `prisma generate`).
+4. Ensure the database accepts connections from the internet (SSL per your provider; this repo documents relaxed TLS for dev in `lib/prisma.ts`).
 
-Opcional: activá el workflow **CI** (`.github/workflows/ci.yml`) para lint/tests en cada PR/push; el deploy lo sigue haciendo Vercel.
+Optional: enable the **CI** workflow (`.github/workflows/ci.yml`) for lint/tests on each PR/push; Vercel still handles deploy.
 
-### Deploy solo con GitHub Actions + Vercel
+### Deploy only via GitHub Actions + Vercel
 
-Si preferís desplegar desde Actions:
+If you prefer deploying from Actions:
 
-1. En Vercel: **Settings → Tokens** → crear token.
-2. En el repo: **Settings → Secrets and variables → Actions**:
+1. In Vercel: **Settings → Tokens** → create a token.
+2. In the repo: **Settings → Secrets and variables → Actions**:
    - `VERCEL_TOKEN`
-   - `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (aparecen en el proyecto Vercel → Settings → General).
+   - `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (from the Vercel project → Settings → General).
 
-Podés usar la acción oficial o `npx vercel deploy --prod --token=...` en un job; mantené las mismas variables de entorno en el dashboard de Vercel para **runtime**.
+You can use the official action or `npx vercel deploy --prod --token=...` in a job; keep the same environment variables in the Vercel dashboard for **runtime**.
 
 ---
 
-## 3. Otros hosts (Render, Railway, Fly, Docker)
+## 3. Other hosts (Render, Railway, Fly, Docker)
 
-Misma idea:
+Same idea:
 
-- Comando: `npm run build` luego `npm run start` (o `next start`).
+- Command: `npm run build` then `npm run start` (or `next start`).
 - Variables: `DATABASE_URL`, `ADMIN_BASIC_AUTH_*`, `NODE_ENV=production`.
 
-En **Render**: Web Service + Postgres managed, env vars en el panel.
+On **Render**: Web Service + managed Postgres, env vars in the dashboard.
 
 ---
 
-## 4. Checklist seguridad
+## 4. Security checklist
 
-- No commitees `.env`; usá secretos del proveedor.
-- Rotá `ADMIN_BASIC_AUTH_PASSWORD` si se filtra.
-- Basic Auth va **sin HTTPS** en texto plano en tránsito si no hay TLS; usá siempre **HTTPS** en producción (Vercel/Cloudflare lo dan por defecto).
+- Do not commit `.env`; use your provider’s secrets.
+- Rotate `ADMIN_BASIC_AUTH_PASSWORD` if it leaks.
+- Basic Auth credentials are sent in clear text **without HTTPS**; always use **HTTPS** in production (Vercel/Cloudflare provide this by default).

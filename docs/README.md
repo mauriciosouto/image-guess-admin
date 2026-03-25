@@ -7,7 +7,7 @@ Living documentation index: keep it aligned with the code. See [MAINTENANCE.md](
 | Document | Coverage |
 |----------|----------|
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | Stack, flows, server/client boundaries, principles |
-| [DEPLOY.md](./DEPLOY.md) | Deploy público, Basic Auth, Vercel / GitHub Actions |
+| [DEPLOY.md](./DEPLOY.md) | Public deploy, Basic Auth, Vercel / GitHub Actions |
 | [PUZZLE_SYSTEM.md](./PUZZLE_SYSTEM.md) | Database, step generation, preview, hydration |
 | [ZONES_FAB.md](./ZONES_FAB.md) | Coordinates and rules per zone on FAB cards |
 | [EFFECTS_SYSTEM.md](./EFFECTS_SYSTEM.md) | Effect types, per-step pools, rendering |
