@@ -13,6 +13,17 @@ En el servidor de producción definí **siempre** (y en **GitHub / Vercel / Rend
 
 También necesitás **`DATABASE_URL`** apuntando a tu Postgres (ej. Neon, Supabase, RDS).
 
+### TLS / “self-signed certificate in certificate chain”
+
+En **Vercel** (`NODE_ENV=production`) la verificación TLS de Postgres es **estricta** por defecto. Si Prisma falla con *Error opening a TLS connection: self-signed certificate in certificate chain*, agregá **una** de estas variables en el panel del host:
+
+| Variable | Valor |
+|----------|--------|
+| **`DATABASE_RELAX_TLS`** | `true` (recomendado; nombre claro) |
+| `DATABASE_SSL_REJECT_UNAUTHORIZED` | `false` (equivalente; ya documentada en `lib/prisma.ts`) |
+
+La conexión sigue siendo cifrada; solo se omite validar la cadena de certificados del servidor (típico con poolers tipo Supabase).
+
 Comportamiento:
 
 - **Producción** (`NODE_ENV=production`): si faltan user/pass, la app responde **503** (evita dejar el admin abierto por error).

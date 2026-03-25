@@ -32,9 +32,9 @@ Open [http://localhost:3000](http://localhost:3000).
 
 If `db push` fails with **P2002** / duplicates, the `Puzzle` table already has two rows with the same `(dataSource, externalCardId)` pair. Remove duplicates or clear puzzles in SQL, then run `db push` again.
 
-### TLS (Supabase / poolers)
+### TLS (Supabase / poolers / Vercel)
 
-See `DATABASE_SSL_REJECT_UNAUTHORIZED` and `lib/prisma.ts` if you hit certificate errors in development.
+If you see **self-signed certificate in certificate chain**: in **production** set **`DATABASE_RELAX_TLS=true`** (or `DATABASE_SSL_REJECT_UNAUTHORIZED=false`). See `lib/prisma.ts` and **[docs/DEPLOY.md](./docs/DEPLOY.md)**.
 
 ## API (summary)
 

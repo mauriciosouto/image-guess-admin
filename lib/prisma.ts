@@ -30,14 +30,20 @@ function stripSslQueryParams(connectionString: string): string {
 
 /**
  * Relaxed TLS: encrypts the connection but skips certificate chain verification.
- * - Explicit: DATABASE_SSL_REJECT_UNAUTHORIZED=false or 0
- * - Dev default: on when NODE_ENV=development, unless DATABASE_SSL_REJECT_UNAUTHORIZED=true or 1
+ * - `DATABASE_RELAX_TLS=true` — use in **production** (e.g. Vercel) when the pooler shows
+ *   “self-signed certificate in certificate chain” (Supabase, some Neon URLs, etc.).
+ * - `DATABASE_SSL_REJECT_UNAUTHORIZED=false` or `0` — same effect (legacy name).
+ * - Dev default: on when `NODE_ENV=development`, unless `DATABASE_SSL_REJECT_UNAUTHORIZED=true`.
  *
- * Supabase / pooler URLs often include sslmode=require; with current pg that is treated like
- * verify-full and can still fail with "self-signed certificate in certificate chain". We strip
- * those params and set rejectUnauthorized: false when relaxed.
+ * Supabase / pooler URLs often include sslmode=require; with node-pg that can still verify the
+ * chain strictly. When relaxed, we strip those query params and set `rejectUnauthorized: false`.
  */
 function relaxedPostgresTlsEnabled(): boolean {
+  const relaxTls = process.env.DATABASE_RELAX_TLS;
+  if (relaxTls === "1" || relaxTls?.toLowerCase() === "true") {
+    return true;
+  }
+
   const v = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED;
   if (v === "0" || v?.toLowerCase() === "false") {
     return true;
