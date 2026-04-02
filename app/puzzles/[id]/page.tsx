@@ -53,6 +53,16 @@ export default async function PuzzleDetailPage({ params }: PageProps) {
                 {puzzle.dataSource}
               </dd>
             </div>
+            {puzzle.fabSet ? (
+              <div>
+                <dt className="inline text-zinc-500 dark:text-zinc-400">
+                  FAB set:{" "}
+                </dt>
+                <dd className="inline font-mono text-zinc-800 dark:text-zinc-200">
+                  {puzzle.fabSet}
+                </dd>
+              </div>
+            ) : null}
             <div>
               <dt className="inline text-zinc-500 dark:text-zinc-400">
                 Seed:{" "}

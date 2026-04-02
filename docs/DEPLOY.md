@@ -44,8 +44,9 @@ You do not need a separate deploy workflow if you connect the repo in Vercel: ea
 
 1. [vercel.com](https://vercel.com) → **Add New Project** → import the GitHub repo.
 2. **Environment variables**: `DATABASE_URL`, `ADMIN_BASIC_AUTH_USER`, `ADMIN_BASIC_AUTH_PASSWORD`.
-3. **Build**: `npm run build` (default), **Install** `npm install` (runs `postinstall` → `prisma generate`).
-4. Ensure the database accepts connections from the internet (SSL per your provider; this repo documents relaxed TLS for dev in `lib/prisma.ts`).
+3. **Install**: `npm install` (runs `postinstall` → `prisma generate`).
+4. **Migrations (shared DB with game):** The **game** project runs **`prisma migrate deploy`** against this database. This admin app’s Vercel **build** should normally be **`npm run build`** only (after `npm install` → `prisma generate`). Do not run a second migration pipeline here unless your team explicitly mirrors the game’s `prisma/migrations/` and owns that risk. See **[SHARED_DATABASE.md](./SHARED_DATABASE.md)**.
+5. Ensure the database accepts connections from the internet (SSL per your provider; this repo documents relaxed TLS in `lib/prisma.ts`).
 
 Optional: enable the **CI** workflow (`.github/workflows/ci.yml`) for lint/tests on each PR/push; Vercel still handles deploy.
 
@@ -66,7 +67,7 @@ You can use the official action or `npx vercel deploy --prod --token=...` in a j
 
 Same idea:
 
-- Command: `npm run build` then `npm run start` (or `next start`).
+- Command: `npm run build` then `npm run start` (migrations applied by the **game** deploy). If this admin is the only consumer of the DB in your setup, use your team’s migrate-then-build policy instead.
 - Variables: `DATABASE_URL`, `ADMIN_BASIC_AUTH_*`, `NODE_ENV=production`.
 
 On **Render**: Web Service + managed Postgres, env vars in the dashboard.

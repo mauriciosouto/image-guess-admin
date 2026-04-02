@@ -343,6 +343,9 @@ export default function Home() {
             id: card.id,
             name: card.name,
             imageUrl: card.imageUrl,
+            ...(card.setLabel != null && card.setLabel !== ""
+              ? { setLabel: card.setLabel }
+              : {}),
           },
         }),
       });

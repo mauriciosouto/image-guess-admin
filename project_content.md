@@ -4,7 +4,7 @@ Context for onboarding, AI, and the team: structure, stack, and current behavior
 
 ## Purpose
 
-Web admin to **preview** cards from **pluggable datasources** (currently **Flesh and Blood**). Grid cards are **not saved to the database** when you “Load cards”. What **is** persisted are **puzzles**: card metadata + `seed` + **15× `PuzzleStep`** (`blur`/`brightness` for the API; the preview UI **does not** use them to draw). Preview: full image + **deterministic** overlays from `seed` + step (`deterministicStep.ts` / `generateRegions` — 4×4 art shuffle + scripted 15-step reveal). **Docs:** [docs/README.md](./docs/README.md), [docs/ZONES_FAB.md](./docs/ZONES_FAB.md), [docs/MAINTENANCE.md](./docs/MAINTENANCE.md).
+Web admin to **preview** cards from **pluggable datasources** (currently **Flesh and Blood**). Grid cards are **not saved to the database** when you “Load cards”. What **is** persisted are **puzzles**: card metadata + `seed` + **15× `PuzzleStep`** (`blur`/`brightness` for the API; the preview UI **does not** use them to draw). Preview: full image + **deterministic** overlays from `seed` + step (`deterministicStep.ts` / `generateRegions` — 4×4 art shuffle + scripted 15-step reveal). **Docs:** [docs/README.md](./docs/README.md), [docs/ZONES_FAB.md](./docs/ZONES_FAB.md), [docs/GAME_CLIENT_SPEC.md](./docs/GAME_CLIENT_SPEC.md) (game app parity), [docs/MAINTENANCE.md](./docs/MAINTENANCE.md).
 
 ## Stack
 
@@ -63,7 +63,8 @@ Web admin to **preview** cards from **pluggable datasources** (currently **Flesh
 │       ├── fab.ts
 │       └── index.ts
 ├── prisma/
-│   └── schema.prisma
+│   ├── schema.prisma
+│   └── migrations/            # Mirror of game repo (same SQL files); game runs deploy
 ├── prisma.config.ts
 ├── next.config.ts
 ├── tsconfig.json
@@ -104,7 +105,7 @@ Body: `{ sourceId, filters? }` → `{ count, cards }` with `dataSourceId` on eac
 
 ### `POST /api/puzzles/get-or-create`
 
-Body: `{ dataSource, card: { id, name, imageUrl } }`. Lookup by `@@unique([dataSource, externalCardId])`; if missing, creates puzzle + steps. Response: `{ puzzleId, seed, cardName, imageUrl, steps }`.
+Body: `{ dataSource, card: { id, name, imageUrl, setLabel? }, fabSet? }`. `fabSet` (root) overrides `card.setLabel` when both are sent; stored as **`Puzzle.fabSet`**. Lookup by `@@unique([dataSource, externalCardId])`; if missing, creates puzzle + steps. Response: `{ puzzleId, seed, cardName, imageUrl, fabSet, steps }`.
 
 ### `POST /api/puzzles/bulk-generate`
 
@@ -128,10 +129,10 @@ Body: `{ dataSource, externalCardIds: string[] }`. Response `{ cards: Record<ext
 
 ## Database (`prisma/schema.prisma`)
 
-- **`Puzzle`**: cuid, `dataSource`, `externalCardId`, `cardName`, `imageUrl`, `seed`, `createdAt`, `savedAt?` (explicit save in admin), `steps`; `@@unique([dataSource, externalCardId])`.
+- **`Puzzle`**: cuid, `dataSource`, `fabSet?` (FAB set from `CardDTO.setLabel` / request), `externalCardId`, `cardName`, `imageUrl`, `seed`, `createdAt`, `savedAt?` (explicit save in admin), `steps`; `@@unique([dataSource, externalCardId])`.
 - **`PuzzleStep`**: `puzzleId`, `step` 1–15, `blur`, `brightness`; `@@unique([puzzleId, step])`; `onDelete: Cascade`.
 
-Sync schema: `npx prisma db push` (or migrations). After schema changes: `npx prisma generate` (`postinstall` runs after `npm install`).
+**Migrations:** Owned by the **game** project (`migrate dev` / `migrate deploy`). This admin **mirrors** `prisma/migrations/` from game and keeps `schema.prisma` aligned; see **[docs/SHARED_DATABASE.md](./docs/SHARED_DATABASE.md)**. When admin work requires DDL or onboarding the game repo, use **[docs/PROMPT_GAME_REPO_FULL.md](./docs/PROMPT_GAME_REPO_FULL.md)** (full) or **[docs/PROMPT_GAME_MIGRATION_FROM_ADMIN.md](./docs/PROMPT_GAME_MIGRATION_FROM_ADMIN.md)** (short) in the game repo. Local: **`npx prisma generate`** after syncing (`postinstall` runs after `npm install`).
 
 ## Frontend (`app/page.tsx`)
 

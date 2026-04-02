@@ -5,8 +5,8 @@ const updateMany = vi.hoisted(() => vi.fn());
 const create = vi.hoisted(() => vi.fn());
 const loadCards = vi.hoisted(() =>
   vi.fn(async () => [
-    { id: "c1", name: "One", imageUrl: "http://1" },
-    { id: "c2", name: "Two", imageUrl: "http://2" },
+    { id: "c1", name: "One", imageUrl: "http://1", setLabel: "WTR" },
+    { id: "c2", name: "Two", imageUrl: "http://2", setLabel: "WTR" },
   ]),
 );
 
@@ -45,8 +45,8 @@ describe("POST /api/puzzles/bulk-generate", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     loadCards.mockImplementation(async () => [
-      { id: "c1", name: "One", imageUrl: "http://1" },
-      { id: "c2", name: "Two", imageUrl: "http://2" },
+      { id: "c1", name: "One", imageUrl: "http://1", setLabel: "WTR" },
+      { id: "c2", name: "Two", imageUrl: "http://2", setLabel: "WTR" },
     ]);
   });
 
@@ -77,6 +77,7 @@ describe("POST /api/puzzles/bulk-generate", () => {
     expect(body.draftsSaved).toBe(0);
     expect(body.alreadySaved).toBe(0);
     expect(create).toHaveBeenCalledTimes(2);
+    expect(create.mock.calls[0]?.[0]?.data).toMatchObject({ fabSet: "WTR" });
     expect(updateMany).not.toHaveBeenCalled();
   });
 

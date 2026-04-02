@@ -2,7 +2,7 @@
 
 ## Persistence (Prisma)
 
-**`Puzzle`**: `id`, `dataSource`, `externalCardId`, `cardName`, `imageUrl`, `seed`, `createdAt`; `steps` relation; `@@unique([dataSource, externalCardId])`.
+**`Puzzle`**: `id`, `dataSource`, `fabSet?` (FAB set code when known; set from plugin `setLabel` on create), `externalCardId`, `cardName`, `imageUrl`, `seed`, `createdAt`; `steps` relation; `@@unique([dataSource, externalCardId])`.
 
 **`PuzzleStep`**: `puzzleId`, `step` (1–`PUZZLE_STEP_COUNT`, currently **15**), `blur`, `brightness` (floats); `@@unique([puzzleId, step])`; `onDelete: Cascade`.
 
@@ -21,6 +21,8 @@
 
 1. **Base image**: always full tile (`object-cover`).
 2. **Overlays**: `generateRegions(puzzle.seed, step)` in the **Server Component**; serialized props to the client tile. No per-step regenerate UI: overlays are a pure function of `seed` + `step`.
+
+For a **separate game client** that must match this behavior, see **[GAME_CLIENT_SPEC.md](./GAME_CLIENT_SPEC.md)**.
 
 ## Key files
 
@@ -56,4 +58,4 @@ See `project_content.md` for request/response bodies.
 
 Puzzles created before **15** steps may have fewer `PuzzleStep` rows; the UI only renders steps present in the DB. **Regenerate puzzle** replaces all steps with a fresh **15**-row set.
 
-After pulling the removal of `PuzzleStep.stepVariant`, run **`npx prisma db push`** (or apply a migration) so the column is dropped from PostgreSQL.
+After pulling the removal of `PuzzleStep.stepVariant`, run **`npm run db:migrate`** (or **`npm run db:migrate:deploy`**) so the column is dropped from PostgreSQL.

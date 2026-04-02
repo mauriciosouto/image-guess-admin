@@ -15,11 +15,43 @@ describe("parsePuzzleCardBody", () => {
     expect("error" in r).toBe(false);
     if ("error" in r) return;
     expect(r.dataSource).toBe("fab");
+    expect(r.fabSet).toBeNull();
     expect(r.card).toEqual({
       id: "x",
       name: "Name",
       imageUrl: "https://x",
     });
+  });
+
+  it("sets fabSet from card.setLabel", () => {
+    const r = parsePuzzleCardBody({
+      dataSource: "fab",
+      card: {
+        id: "x",
+        name: "N",
+        imageUrl: "https://x",
+        setLabel: " WTR ",
+      },
+    });
+    expect("error" in r).toBe(false);
+    if ("error" in r) return;
+    expect(r.fabSet).toBe("WTR");
+  });
+
+  it("prefers top-level fabSet over card.setLabel", () => {
+    const r = parsePuzzleCardBody({
+      dataSource: "fab",
+      fabSet: "ROS",
+      card: {
+        id: "x",
+        name: "N",
+        imageUrl: "https://x",
+        setLabel: "WTR",
+      },
+    });
+    expect("error" in r).toBe(false);
+    if ("error" in r) return;
+    expect(r.fabSet).toBe("ROS");
   });
 
   it("rejects invalid bodies", () => {

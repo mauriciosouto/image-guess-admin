@@ -36,6 +36,7 @@ describe("POST /api/puzzles/get-or-create", () => {
       seed: "s",
       cardName: "N",
       imageUrl: "u",
+      fabSet: "WTR",
       savedAt: null,
       steps: [
         { step: 1, blur: 1, brightness: 0.5 },
@@ -54,8 +55,13 @@ describe("POST /api/puzzles/get-or-create", () => {
       }),
     );
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { puzzleId: string; steps: unknown[] };
+    const body = (await res.json()) as {
+      puzzleId: string;
+      fabSet: string | null;
+      steps: unknown[];
+    };
     expect(body.puzzleId).toBe("existing");
+    expect(body.fabSet).toBe("WTR");
     expect(body.steps).toHaveLength(2);
     expect(create).not.toHaveBeenCalled();
   });
@@ -67,6 +73,7 @@ describe("POST /api/puzzles/get-or-create", () => {
       seed: "generated-uuid",
       cardName: "Card",
       imageUrl: "http://i",
+      fabSet: "WTR",
       savedAt: null,
       steps: Array.from({ length: 15 }, (_, i) => ({
         step: i + 1,
@@ -80,7 +87,12 @@ describe("POST /api/puzzles/get-or-create", () => {
         method: "POST",
         body: JSON.stringify({
           dataSource: "fab",
-          card: { id: "new", name: "Card", imageUrl: "http://i" },
+          card: {
+            id: "new",
+            name: "Card",
+            imageUrl: "http://i",
+            setLabel: "WTR",
+          },
         }),
         headers: { "Content-Type": "application/json" },
       }),
@@ -89,5 +101,8 @@ describe("POST /api/puzzles/get-or-create", () => {
     const body = (await res.json()) as { puzzleId: string };
     expect(body.puzzleId).toBe("new-id");
     expect(create).toHaveBeenCalledTimes(1);
+    expect(create.mock.calls[0]?.[0]?.data).toMatchObject({
+      fabSet: "WTR",
+    });
   });
 });

@@ -13,24 +13,40 @@ Admin panel to preview collectible card game cards and manage **puzzles** in Pos
 - Node.js 20+ (recommended)
 - PostgreSQL and `DATABASE_URL` in `.env`
 
-## Deploy (public + password)
+## Database (shared with game)
 
-In production, set **`ADMIN_BASIC_AUTH_USER`** and **`ADMIN_BASIC_AUTH_PASSWORD`** (HTTP Basic Auth in `middleware.ts`). Step-by-step guide (Vercel, GitHub Actions, alternatives): **[docs/DEPLOY.md](./docs/DEPLOY.md)**.
+The **game** project **owns** PostgreSQL migrations and `migrate deploy` for this database. This admin **mirrors** `prisma/schema.prisma` (and usually `prisma/migrations/` copied from game) for `prisma generate` only.
 
-## Getting started
+| Command | When |
+|---------|------|
+| `npm run db:migrate` | **Optional / local disposable DB** — only if you have copied the game’s `prisma/migrations/` and understand you are not the migration owner for shared envs. |
+| `npm run db:migrate:deploy` | **Usually not** for shared staging/production — run from the **game** pipeline instead. |
+| `npm run db:migrate:status` | Inspect local DB vs migration files (debugging). |
+
+**New developer / empty database:** Apply migrations from the **game** repo against the same `DATABASE_URL`, then here:
 
 ```bash
-npm install
-npx prisma generate
-npx prisma db push
+npm install   # prisma generate
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
+### Admin needs a schema change?
+
+Use **[docs/PROMPT_GAME_REPO_FULL.md](./docs/PROMPT_GAME_REPO_FULL.md)** in the **game** repo for the full policy + `fabSet` onboarding, or **[docs/PROMPT_GAME_MIGRATION_FROM_ADMIN.md](./docs/PROMPT_GAME_MIGRATION_FROM_ADMIN.md)** for a shorter one-off DDL request. After the game merges, sync `prisma/migrations/` + `schema.prisma` in admin per **[docs/SHARED_DATABASE.md](./docs/SHARED_DATABASE.md)**.
+
+### Legacy `db push` / baselining
+
+If you still have a one-off local DB out of sync with `_prisma_migrations`, fix it with the **game** repo’s migration workflow or follow **SHARED_DATABASE.md** — do not invent a parallel history in admin.
+
+## Deploy (public + password)
+
+In production, set **`ADMIN_BASIC_AUTH_USER`** and **`ADMIN_BASIC_AUTH_PASSWORD`** (HTTP Basic Auth in `middleware.ts`). Step-by-step guide (Vercel, GitHub Actions, migrations): **[docs/DEPLOY.md](./docs/DEPLOY.md)**.
+
 ### Schema: `@@unique([dataSource, externalCardId])`
 
-If `db push` fails with **P2002** / duplicates, the `Puzzle` table already has two rows with the same `(dataSource, externalCardId)` pair. Remove duplicates or clear puzzles in SQL, then run `db push` again.
+If migrations or seed data violate **P2002** (duplicate `(dataSource, externalCardId)`), remove duplicates in SQL, then ensure schema is applied via the **game** project’s migrations (or your local copy of them).
 
 ### TLS (Supabase / poolers / Vercel)
 
@@ -58,6 +74,9 @@ If you see **self-signed certificate in certificate chain**: in **production** s
 | `npm run test` | Vitest (watch) |
 | `npm run test:run` | Vitest single run |
 | `npm run test:coverage` | Vitest + coverage (thresholds ≥ **60%** lines/statements on `lib/` + `app/api/`) |
+| `npm run db:migrate` | Local: `prisma migrate dev` |
+| `npm run db:migrate:deploy` | Prod/CI: `prisma migrate deploy` |
+| `npm run db:migrate:status` | `prisma migrate status` |
 
 ## Useful paths
 
@@ -66,10 +85,12 @@ If you see **self-signed certificate in certificate chain**: in **production** s
 | `lib/datasources/` | Plugins and FAB |
 | `lib/puzzle/` | `deterministicStep`, `generateRegions`, `generateSteps`, FAB zones, effects |
 | `docs/` | Maintained documentation (see `docs/MAINTENANCE.md`) |
+| `prisma/migrations/` | **Mirror** of game repo (same files); admin does not author new migrations for shared DB |
 | `app/api/puzzles/*` | get-or-create, regenerate, delete |
 | `app/puzzles/[id]/` | Puzzle detail page |
 
 - **[docs/README.md](./docs/README.md)** — documentation index (puzzle, zones, effects, architecture).
+- **[docs/GAME_CLIENT_SPEC.md](./docs/GAME_CLIENT_SPEC.md)** — contract for a separate game client (`seed` + step rendering parity).
 - **[project_content.md](./project_content.md)** — compact context and repo tree.
 
 ## Conventions

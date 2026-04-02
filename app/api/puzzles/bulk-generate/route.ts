@@ -118,6 +118,7 @@ export async function POST(request: Request) {
           await prisma.puzzle.create({
             data: {
               dataSource,
+              fabSet: card.setLabel?.trim() || null,
               externalCardId: card.id,
               cardName: card.name,
               imageUrl: card.imageUrl,

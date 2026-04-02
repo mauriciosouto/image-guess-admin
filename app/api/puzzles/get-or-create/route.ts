@@ -12,6 +12,7 @@ function puzzleResponse(puzzle: {
   seed: string;
   cardName: string;
   imageUrl: string;
+  fabSet: string | null;
   savedAt: Date | null;
   steps: { step: number; blur: number; brightness: number }[];
 }) {
@@ -20,6 +21,7 @@ function puzzleResponse(puzzle: {
     seed: puzzle.seed,
     cardName: puzzle.cardName,
     imageUrl: puzzle.imageUrl,
+    fabSet: puzzle.fabSet,
     savedAt: puzzle.savedAt?.toISOString() ?? null,
     steps: puzzle.steps.map((s) => ({
       step: s.step,
@@ -40,7 +42,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { dataSource, card } = parsed;
+    const { dataSource, fabSet, card } = parsed;
 
     // Use findFirst (not compound findUnique) so a stale generated client still works
     // after schema adds @@unique; DB unique still enforces one row per pair when applied.
@@ -65,6 +67,7 @@ export async function POST(request: Request) {
       const created = await prisma.puzzle.create({
         data: {
           dataSource,
+          fabSet,
           externalCardId: card.id,
           cardName: card.name,
           imageUrl: card.imageUrl,

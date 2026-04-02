@@ -1,5 +1,7 @@
 export type PuzzleCardInput = {
   dataSource: string;
+  /** FAB set code (e.g. `WTR`); from body `fabSet` or `card.setLabel`. */
+  fabSet: string | null;
   card: { id: string; name: string; imageUrl: string };
 };
 
@@ -14,7 +16,13 @@ export function parsePuzzleCardBody(body: unknown): ParsePuzzleBodyResult {
 
   const b = body as {
     dataSource?: string;
-    card?: { id?: string; name?: string; imageUrl?: string };
+    fabSet?: string;
+    card?: {
+      id?: string;
+      name?: string;
+      imageUrl?: string;
+      setLabel?: string;
+    };
   };
 
   const dataSource =
@@ -40,5 +48,11 @@ export function parsePuzzleCardBody(body: unknown): ParsePuzzleBodyResult {
     };
   }
 
-  return { dataSource, card: { id, name, imageUrl } };
+  const fromRoot = typeof b.fabSet === "string" ? b.fabSet.trim() : "";
+  const fromCard =
+    typeof card.setLabel === "string" ? card.setLabel.trim() : "";
+  const fabSetJoined = fromRoot || fromCard;
+  const fabSet = fabSetJoined.length > 0 ? fabSetJoined : null;
+
+  return { dataSource, fabSet, card: { id, name, imageUrl } };
 }

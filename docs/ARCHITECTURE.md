@@ -9,7 +9,7 @@
 ## Stack
 
 - **Next.js 16** (App Router), **React 19**, **TypeScript**, **Tailwind 4**.
-- **Prisma 7** + `@prisma/adapter-pg`; generated client in `app/generated/prisma` (gitignored).
+- **Prisma 7** + `@prisma/adapter-pg`; generated client in `app/generated/prisma` (gitignored). **Migrations are authored in the game repo**; admin mirrors **`prisma/migrations/`** for parity. See **`docs/SHARED_DATABASE.md`** and **`docs/PROMPT_GAME_MIGRATION_FROM_ADMIN.md`**.
 - FAB data: `@flesh-and-blood/cards`.
 
 ## Main flow
