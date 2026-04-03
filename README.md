@@ -62,6 +62,8 @@ If you see **self-signed certificate in certificate chain**: in **production** s
 | POST | `/api/puzzles/delete` | Delete puzzle |
 | POST | `/api/puzzles/save` | Mark puzzle saved (`savedAt`) |
 | POST | `/api/puzzles/lookup` | Status for cards (`dataSource` + external ids) |
+| GET | `/api/puzzles/fab-sets` | `{ fabSets }` — same puzzle-backed labels as **`/api/single/sets`** |
+| GET | `/api/single/sets` | `{ sets }` — distinct **`Puzzle.fabSet`** for `dataSource=fab`, saved, active (not global FAB catalog) |
 
 ## npm scripts
 

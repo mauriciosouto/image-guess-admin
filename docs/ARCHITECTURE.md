@@ -3,7 +3,7 @@
 ## Principles
 
 - **Grid cards**: in memory / preview API; **no** `Card` table in the database.
-- **Puzzles**: stored in PostgreSQL; identified by unique `(dataSource, externalCardId)`.
+- **Puzzles**: stored in PostgreSQL; lookup uses `(dataSource, externalCardId)`. **Player-facing FAB editions** use **`Puzzle.fabSet`**, not `dataSource` (see `GET /api/puzzles/fab-sets`, **`GAME_CLIENT_SPEC.md`**).
 - **Puzzle preview**: does not call external APIs at runtime; only stored `imageUrl` + local generation from `seed`.
 
 ## Stack

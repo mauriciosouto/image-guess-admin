@@ -2,7 +2,7 @@ export type CardDTO = {
   id: string;
   name: string;
   imageUrl: string;
-  /** Persisted when the datasource supplies it (e.g. FAB set). */
+  /** Set / edition from the datasource for this card (e.g. FAB code from the active load filter). */
   setLabel?: string | null;
 };
 

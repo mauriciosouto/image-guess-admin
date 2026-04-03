@@ -12,7 +12,7 @@ Living documentation index: keep it aligned with the code. See [MAINTENANCE.md](
 | [PROMPT_GAME_MIGRATION_FROM_ADMIN.md](./PROMPT_GAME_MIGRATION_FROM_ADMIN.md) | Short template for a **one-off** DDL request in the **game** repo |
 | [PROMPT_GAME_REPO_FULL.md](./PROMPT_GAME_REPO_FULL.md) | **Full prompt** for the game repo: migration ownership + `fabSet` + docs |
 | [PUZZLE_SYSTEM.md](./PUZZLE_SYSTEM.md) | Database, step generation, preview, hydration |
-| [GAME_CLIENT_SPEC.md](./GAME_CLIENT_SPEC.md) | **Game app**: data contract, porting `generateRegions`, rendering parity |
+| [GAME_CLIENT_SPEC.md](./GAME_CLIENT_SPEC.md) | **Game app**: data contract, **`fabSet`** vs `dataSource` for players, `generateRegions`, rendering |
 | [ZONES_FAB.md](./ZONES_FAB.md) | Coordinates and rules per zone on FAB cards |
 | [EFFECTS_SYSTEM.md](./EFFECTS_SYSTEM.md) | Effect types, per-step pools, rendering |
 | [ROADMAP.md](./ROADMAP.md) | Done vs future ideas (not commitments) |

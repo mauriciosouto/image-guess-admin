@@ -74,6 +74,7 @@ function toCardDTO(card: Card, setLabel: string): CardDTO {
     id,
     name: card.name,
     imageUrl,
+    /** Same as the active `set` filter for this load — each card’s edition for persistence (`Puzzle.fabSet`). */
     setLabel,
   };
 }

@@ -47,8 +47,9 @@ app/puzzles/[id]/
 
 ## Related API
 
+- `GET /api/puzzles/fab-sets` — `{ fabSets }`. **`GET /api/single/sets`** — `{ sets }` — same data via **`getPlayableFabSetLabels`** (`dataSource === "fab"`, saved, active, non-null **`fabSet`**). Not the global FAB card-package list (see [GAME_CLIENT_SPEC.md](./GAME_CLIENT_SPEC.md)).
 - `POST /api/puzzles/get-or-create` — creates puzzle + steps via `generateSteps`.
-- `POST /api/puzzles/bulk-generate` — same filters as datasource load; **saves drafts** (`savedAt`) for existing puzzles that were still draft, **creates** missing puzzles in batches of **30** (new rows also get **`savedAt`**). Already-saved puzzles are unchanged.
+- `POST /api/puzzles/bulk-generate` — same filters as datasource load; **saves drafts** (`savedAt` and **`fabSet`**) for existing draft puzzles, **creates** missing puzzles in batches of **30** (new rows get **`savedAt`** and **`fabSet`**). **`fabSet`** is taken from each **`CardDTO.setLabel`** (set provided by the plugin for that card); for FAB the load filter **`set`** is only a fallback if `setLabel` is absent. Already-saved puzzles are unchanged.
 - `POST /api/puzzles/regenerate` — new `seed` + steps.
 - `POST /api/puzzles/delete` — deletes puzzle.
 

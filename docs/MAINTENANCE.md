@@ -16,7 +16,7 @@ Goal: keep `docs/`, `README.md`, and `project_content.md` accurate for the repo.
 | `lib/puzzle/generateSteps.ts` | `PUZZLE_SYSTEM.md` |
 | `vitest.config.ts`, new `**/*.test.ts` | `docs/README.md`, `README.md`, `project_content.md`, `ARCHITECTURE.md` |
 | `middleware.ts`, `.github/workflows/*`, `docs/DEPLOY.md` | `DEPLOY.md`, root `README.md`, `docs/README.md` |
-| `app/puzzles/[id]/*` (page, tile, hydration) | `PUZZLE_SYSTEM.md`, **`GAME_CLIENT_SPEC.md`** (rendering contract), `ARCHITECTURE.md` if RSC/client pattern changes |
+| `app/puzzles/[id]/*`, `app/api/puzzles/fab-sets/*`, `app/api/single/*`, `lib/puzzle/getPlayableFabSetLabels.ts` | `PUZZLE_SYSTEM.md`, **`GAME_CLIENT_SPEC.md`**, `README.md` / `project_content.md` API tables |
 | New datasource or datasources API contract | `ARCHITECTURE.md`, `project_content.md` |
 | Product “coming soon” decisions | `ROADMAP.md` (mark as idea, not shipped) |
 

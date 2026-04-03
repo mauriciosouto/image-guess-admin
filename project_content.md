@@ -103,13 +103,17 @@ Registry: `lib/datasources/index.ts` → `dataSources[]`.
 
 Body: `{ sourceId, filters? }` → `{ count, cards }` with `dataSourceId` on each item. **No persistence.**
 
+### `GET /api/puzzles/fab-sets`
+
+`{ fabSets: string[] }` — distinct **`Puzzle.fabSet`** (same query as below). **`GET /api/single/sets`** — `{ sets: string[] }` — **same values**, path alias for single-player clients; both use `lib/puzzle/getPlayableFabSetLabels.ts`. Filter guessable puzzles with `dataSource = "fab"` and `fabSet IN <user selection>`.
+
 ### `POST /api/puzzles/get-or-create`
 
-Body: `{ dataSource, card: { id, name, imageUrl, setLabel? }, fabSet? }`. `fabSet` (root) overrides `card.setLabel` when both are sent; stored as **`Puzzle.fabSet`**. Lookup by `@@unique([dataSource, externalCardId])`; if missing, creates puzzle + steps. Response: `{ puzzleId, seed, cardName, imageUrl, fabSet, steps }`.
+Body: `{ dataSource, card: { id, name, imageUrl, setLabel? }, fabSet? }`. **`card.setLabel`** (from the loaded card / external source) is preferred; root **`fabSet`** is fallback. Stored as **`Puzzle.fabSet`**. Lookup by `@@unique([dataSource, externalCardId])`; if missing, creates puzzle + steps. Response: `{ puzzleId, seed, cardName, imageUrl, fabSet, steps }`.
 
 ### `POST /api/puzzles/bulk-generate`
 
-Body: `{ sourceId, filters }` (same shape as **datasources/load**). Loads all cards from the plugin, dedupes by card id, one DB query for existing puzzles, then in **batches of 30**: sets **`savedAt`** on existing **draft** rows, and **creates** missing puzzles + steps (also with **`savedAt`**). Rows already saved are unchanged. Response: `{ ok, dataSource, totalCards, uniqueCards, created, draftsSaved, alreadySaved, batchSize, errors[] }`.
+Body: `{ sourceId, filters }` (same shape as **datasources/load**). Loads all cards from the plugin, dedupes by card id, one DB query for existing puzzles, then in **batches of 30**: sets **`savedAt`** and **`fabSet`** on existing **draft** rows (`fabSet` from each card’s **`setLabel`**, filter **`set`** only if missing), and **creates** missing puzzles + steps the same way. Rows already saved are unchanged. Response: `{ ok, dataSource, totalCards, uniqueCards, created, draftsSaved, alreadySaved, batchSize, errors[] }`.
 
 ### `POST /api/puzzles/regenerate`
 
@@ -129,7 +133,7 @@ Body: `{ dataSource, externalCardIds: string[] }`. Response `{ cards: Record<ext
 
 ## Database (`prisma/schema.prisma`)
 
-- **`Puzzle`**: cuid, `dataSource`, `fabSet?` (FAB set from `CardDTO.setLabel` / request), `externalCardId`, `cardName`, `imageUrl`, `seed`, `createdAt`, `savedAt?` (explicit save in admin), `steps`; `@@unique([dataSource, externalCardId])`.
+- **`Puzzle`**: cuid, **`dataSource`** (plugin id, e.g. `fab` — not a FAB edition for players), **`fabSet?`** (edition string per card for **player filters / set picker**), `externalCardId`, `cardName`, `imageUrl`, `seed`, `createdAt`, `savedAt?`, `steps`; `@@index([dataSource, externalCardId])`.
 - **`PuzzleStep`**: `puzzleId`, `step` 1–15, `blur`, `brightness`; `@@unique([puzzleId, step])`; `onDelete: Cascade`.
 
 **Migrations:** Owned by the **game** project (`migrate dev` / `migrate deploy`). This admin **mirrors** `prisma/migrations/` from game and keeps `schema.prisma` aligned; see **[docs/SHARED_DATABASE.md](./docs/SHARED_DATABASE.md)**. When admin work requires DDL or onboarding the game repo, use **[docs/PROMPT_GAME_REPO_FULL.md](./docs/PROMPT_GAME_REPO_FULL.md)** (full) or **[docs/PROMPT_GAME_MIGRATION_FROM_ADMIN.md](./docs/PROMPT_GAME_MIGRATION_FROM_ADMIN.md)** (short) in the game repo. Local: **`npx prisma generate`** after syncing (`postinstall` runs after `npm install`).

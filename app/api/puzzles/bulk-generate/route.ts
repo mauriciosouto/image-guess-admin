@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { dataSources } from "@/lib/datasources";
+import { resolveFabSet } from "@/lib/datasources/resolveFabSet";
 import { validateLoadFilters } from "@/lib/datasources/validate-load-filters";
 import type { CardDTO } from "@/lib/datasources/types";
 import { generateSteps } from "@/lib/puzzle/generateSteps";
@@ -13,6 +14,50 @@ type BulkError = { externalCardId: string; message: string };
 
 /** Process inserts / updates in chunks to bound memory / connection pressure. */
 const BATCH_SIZE = 30;
+
+async function updateDraftPuzzlesBatch(
+  batchIds: string[],
+  cardById: Map<string, CardDTO>,
+  dataSource: string,
+  filters: Record<string, string>,
+  savedAt: Date,
+): Promise<number> {
+  const resolved = batchIds.map((id) =>
+    resolveFabSet(dataSource, filters, cardById.get(id)),
+  );
+  const distinct = new Set(resolved);
+  if (distinct.size <= 1) {
+    const res = await prisma.puzzle.updateMany({
+      where: {
+        dataSource,
+        externalCardId: { in: batchIds },
+        savedAt: null,
+      },
+      data: {
+        savedAt,
+        fabSet: resolved[0] ?? null,
+      },
+    });
+    return res.count;
+  }
+
+  let count = 0;
+  for (let i = 0; i < batchIds.length; i++) {
+    const res = await prisma.puzzle.updateMany({
+      where: {
+        dataSource,
+        externalCardId: batchIds[i]!,
+        savedAt: null,
+      },
+      data: {
+        savedAt,
+        fabSet: resolved[i] ?? null,
+      },
+    });
+    count += res.count;
+  }
+  return count;
+}
 
 /**
  * Loads all cards for the datasource + filters (same contract as `POST /api/datasources/load`),
@@ -67,6 +112,7 @@ export async function POST(request: Request) {
     }
     const uniqueCards = [...uniqueById.values()];
     const uniqueIds = uniqueCards.map((c) => c.id);
+    const cardById = new Map(uniqueCards.map((c) => [c.id, c]));
 
     const existingRows = await prisma.puzzle.findMany({
       where: {
@@ -91,15 +137,14 @@ export async function POST(request: Request) {
     for (let i = 0; i < draftExternalIds.length; i += BATCH_SIZE) {
       const batchIds = draftExternalIds.slice(i, i + BATCH_SIZE);
       try {
-        const res = await prisma.puzzle.updateMany({
-          where: {
-            dataSource,
-            externalCardId: { in: batchIds },
-            savedAt: null,
-          },
-          data: { savedAt },
-        });
-        draftsSaved += res.count;
+        const n = await updateDraftPuzzlesBatch(
+          batchIds,
+          cardById,
+          dataSource,
+          filters,
+          savedAt,
+        );
+        draftsSaved += n;
       } catch (e) {
         errors.push({
           externalCardId: batchIds[0] ?? "batch",
@@ -118,7 +163,7 @@ export async function POST(request: Request) {
           await prisma.puzzle.create({
             data: {
               dataSource,
-              fabSet: card.setLabel?.trim() || null,
+              fabSet: resolveFabSet(dataSource, filters, card),
               externalCardId: card.id,
               cardName: card.name,
               imageUrl: card.imageUrl,
@@ -144,7 +189,10 @@ export async function POST(request: Request) {
                   externalCardId: card.id,
                   savedAt: null,
                 },
-                data: { savedAt },
+                data: {
+                  savedAt,
+                  fabSet: resolveFabSet(dataSource, filters, card),
+                },
               });
               draftsSaved += u.count;
             } catch {

@@ -105,4 +105,91 @@ describe("POST /api/puzzles/get-or-create", () => {
       fabSet: "WTR",
     });
   });
+
+  it("persists fabSet from card.setLabel over root fabSet when creating", async () => {
+    findFirst.mockResolvedValueOnce(null);
+    create.mockResolvedValueOnce({
+      id: "id",
+      seed: "s",
+      cardName: "C",
+      imageUrl: "http://i",
+      fabSet: "WTR",
+      savedAt: null,
+      steps: [],
+    });
+
+    const res = await POST(
+      new Request("http://t", {
+        method: "POST",
+        body: JSON.stringify({
+          dataSource: "fab",
+          fabSet: "ROS",
+          card: {
+            id: "x",
+            name: "C",
+            imageUrl: "http://i",
+            setLabel: "WTR",
+          },
+        }),
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(create.mock.calls[0]?.[0]?.data).toMatchObject({ fabSet: "WTR" });
+    const body = (await res.json()) as { fabSet: string | null };
+    expect(body.fabSet).toBe("WTR");
+  });
+
+  it("persists fabSet from root body when card has no setLabel", async () => {
+    findFirst.mockResolvedValueOnce(null);
+    create.mockResolvedValueOnce({
+      id: "id2",
+      seed: "s",
+      cardName: "C",
+      imageUrl: "http://i",
+      fabSet: "ROS",
+      savedAt: null,
+      steps: [],
+    });
+
+    await POST(
+      new Request("http://t", {
+        method: "POST",
+        body: JSON.stringify({
+          dataSource: "fab",
+          fabSet: "ROS",
+          card: { id: "y", name: "C", imageUrl: "http://i" },
+        }),
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    expect(create.mock.calls[0]?.[0]?.data).toMatchObject({ fabSet: "ROS" });
+  });
+
+  it("saves fabSet null when no set on card or body", async () => {
+    findFirst.mockResolvedValueOnce(null);
+    create.mockResolvedValueOnce({
+      id: "id3",
+      seed: "s",
+      cardName: "C",
+      imageUrl: "http://i",
+      fabSet: null,
+      savedAt: null,
+      steps: [],
+    });
+
+    await POST(
+      new Request("http://t", {
+        method: "POST",
+        body: JSON.stringify({
+          dataSource: "fab",
+          card: { id: "z", name: "C", imageUrl: "http://i" },
+        }),
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    expect(create.mock.calls[0]?.[0]?.data).toMatchObject({ fabSet: null });
+  });
 });

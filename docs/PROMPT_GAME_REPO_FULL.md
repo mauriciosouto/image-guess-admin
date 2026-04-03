@@ -92,4 +92,6 @@ model Puzzle {
 | [SHARED_DATABASE.md](./SHARED_DATABASE.md) | Game vs admin responsibilities |
 | [PROMPT_GAME_MIGRATION_FROM_ADMIN.md](./PROMPT_GAME_MIGRATION_FROM_ADMIN.md) | Shorter template for future one-off DDL requests |
 | [PUZZLE_SYSTEM.md](./PUZZLE_SYSTEM.md) | Puzzle model + APIs |
-| [GAME_CLIENT_SPEC.md](./GAME_CLIENT_SPEC.md) | Game client rendering (`fabSet` is catalog-only, not overlay math) |
+| [GAME_CLIENT_SPEC.md](./GAME_CLIENT_SPEC.md) | Rendering, **`fabSet`** vs global sets, **`dataSource === "fab"`**, single-player set filters |
+
+**Single-player sets:** This admin implements **`GET /api/single/sets`** (`{ sets }`) and **`GET /api/puzzles/fab-sets`** (`{ fabSets }`) via shared **`getPlayableFabSetLabels`**. The game app should call one of these URLs against the same DB or copy that helper; puzzle pick: `dataSource = "fab"` and `fabSet IN userSelection`.

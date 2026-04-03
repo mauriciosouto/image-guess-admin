@@ -1,6 +1,6 @@
 export type PuzzleCardInput = {
   dataSource: string;
-  /** FAB set code (e.g. `WTR`); from body `fabSet` or `card.setLabel`. */
+  /** FAB set from the card / datasource (`card.setLabel`); body `fabSet` is fallback only. */
   fabSet: string | null;
   card: { id: string; name: string; imageUrl: string };
 };
@@ -48,10 +48,10 @@ export function parsePuzzleCardBody(body: unknown): ParsePuzzleBodyResult {
     };
   }
 
-  const fromRoot = typeof b.fabSet === "string" ? b.fabSet.trim() : "";
   const fromCard =
     typeof card.setLabel === "string" ? card.setLabel.trim() : "";
-  const fabSetJoined = fromRoot || fromCard;
+  const fromRoot = typeof b.fabSet === "string" ? b.fabSet.trim() : "";
+  const fabSetJoined = fromCard || fromRoot;
   const fabSet = fabSetJoined.length > 0 ? fabSetJoined : null;
 
   return { dataSource, fabSet, card: { id, name, imageUrl } };

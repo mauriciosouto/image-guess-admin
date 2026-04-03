@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const loadCards = vi.hoisted(() =>
-  vi.fn(async () => [{ id: "x", name: "X", imageUrl: "http://x" }]),
+  vi.fn(async () => [
+    { id: "x", name: "X", imageUrl: "http://x", setLabel: "WTR" as const },
+  ]),
 );
 
 vi.mock("@/lib/datasources", () => ({
@@ -33,7 +35,7 @@ describe("POST /api/datasources/load", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns cards with dataSourceId", async () => {
+  it("returns cards with dataSourceId and setLabel for fabSet downstream", async () => {
     const res = await POST(
       new Request("http://t", {
         method: "POST",
@@ -44,9 +46,14 @@ describe("POST /api/datasources/load", () => {
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
       count: number;
-      cards: Array<{ id: string; dataSourceId: string }>;
+      cards: Array<{
+        id: string;
+        dataSourceId: string;
+        setLabel?: string;
+      }>;
     };
     expect(body.count).toBe(1);
     expect(body.cards[0]?.dataSourceId).toBe("fab");
+    expect(body.cards[0]?.setLabel).toBe("WTR");
   });
 });

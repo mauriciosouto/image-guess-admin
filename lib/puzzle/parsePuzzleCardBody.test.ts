@@ -38,7 +38,7 @@ describe("parsePuzzleCardBody", () => {
     expect(r.fabSet).toBe("WTR");
   });
 
-  it("prefers top-level fabSet over card.setLabel", () => {
+  it("prefers card.setLabel over top-level fabSet", () => {
     const r = parsePuzzleCardBody({
       dataSource: "fab",
       fabSet: "ROS",
@@ -51,7 +51,7 @@ describe("parsePuzzleCardBody", () => {
     });
     expect("error" in r).toBe(false);
     if ("error" in r) return;
-    expect(r.fabSet).toBe("ROS");
+    expect(r.fabSet).toBe("WTR");
   });
 
   it("rejects invalid bodies", () => {

@@ -7,7 +7,8 @@ How a **separate game app** should render puzzle steps so it stays consistent wi
 | Field | Where | Use for rendering |
 |-------|--------|-------------------|
 | `imageUrl` | `Puzzle` | Full card art URL; **single** base image for every step. |
-| `fabSet` | `Puzzle` | Optional. Flesh and Blood set code (e.g. `WTR`) for catalog or filters; **not** used for overlay math. |
+| `fabSet` | `Puzzle` | Optional. Flesh and Blood **edition / set** stored per puzzle (same string the admin datasource puts on each card, e.g. `Welcome to Rathe`). **Not** used for overlay math. |
+| `dataSource` | `Puzzle` | Plugin id. **This product:** treat gameplay as **`fab` only** (`dataSource === "fab"`). It is **not** a FAB edition label — **do not** use it where the UI means “which sets does the player want?”; that is always **`fabSet`**. |
 | `seed` | `Puzzle` | Drives all determinism (region layout + art cell shuffle). |
 | `step` | `PuzzleStep` | Integer **1..15** (see `PUZZLE_STEP_COUNT`). |
 | `blur`, `brightness` | `PuzzleStep` | **Not** used by the admin preview overlays. Optional for your game if you want API parity or other effects. |
@@ -25,6 +26,26 @@ Overlays are a **pure function** of `seed` + `step` only. Port or share these mo
 | `lib/puzzle/regionTypes.ts` | `Region`: `id`, geometry in **% of card**, `effects[]`, optional `zIndex`. |
 | `lib/puzzle/deterministicStep.ts` | `PUZZLE_STEP_COUNT` (**15**), `getShuffledCells(seed)`, `generateStep(seed, step)` → `{ cells, regions }`. |
 | `lib/puzzle/generateRegions.ts` | `generateRegions(seed, step)` → `generateStep(seed, step).regions`. |
+
+### Player / catalog: `fabSet` vs global FAB sets vs `dataSource`
+
+**Product assumption:** this game **only** plays puzzles with **`dataSource === "fab"`** (fixed). You still **must not** show `"fab"` to players as if it were a “set”; edition UX is always **`fabSet`**.
+
+**Wrong pattern:** an endpoint such as **`GET /api/single/sets`** that returns **all** Flesh and Blood sets from the global card package (`@flesh-and-blood/cards`, Fabrary, etc.). That list includes many editions **with no puzzle row** in your database — players could pick sets that never appear in game.
+
+**Right pattern:** build the player’s set checklist from **distinct `Puzzle.fabSet`** where:
+
+- `dataSource = "fab"`
+- `fabSet IS NOT NULL`
+- plus your visibility rules (e.g. `savedAt IS NOT NULL`, `isActive`, room constraints).
+
+When choosing the card/puzzle to guess, filter puzzles with:
+
+**`dataSource = "fab"` AND `puzzle.fabSet IN <user’s selected fabSets>`**
+
+So every selected label maps to at least one real puzzle (assuming your UI only offers `fabSet` values returned by this query).
+
+This admin exposes **`GET /api/puzzles/fab-sets`** → `{ fabSets: string[] }` and **`GET /api/single/sets`** → `{ sets: string[] }` — **identical lists** (puzzle-backed `fabSet`, `dataSource: "fab"`, saved, active). The game can call either URL or duplicate **`getPlayableFabSetLabels`** logic in its own API.
 
 Shuffle string for art cell order: **`${seed}:cells:order`** (see `getShuffledCells`).
 

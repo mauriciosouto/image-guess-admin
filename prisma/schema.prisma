@@ -11,7 +11,7 @@
 
 generator client {
   provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  output   = "../app/generated/prisma"
 }
 
 datasource db {
@@ -79,10 +79,11 @@ model Profile {
 
 /// Shared with admin app — same table `Puzzle`. Admin authors content; game only reads (and uses extra columns below).
 model Puzzle {
-  id             String    @id @default(cuid())
-  dataSource     String
-  /// Flesh and Blood set code when the card comes from FAB (e.g. datasource filter `set`); null for legacy rows or non-FAB sources.
-  fabSet         String?
+  id         String @id @default(cuid())
+  /// Datasource plugin id (e.g. `fab`). Do not use as a player-facing “FAB set”; see `fabSet`.
+  dataSource String
+  /// Flesh and Blood edition / set on this card (from datasource when loaded). Use for player set filters and catalog — not `dataSource`.
+  fabSet     String?
   externalCardId String
   cardName       String
   imageUrl       String
